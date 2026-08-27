@@ -3,6 +3,13 @@ import ReactMarkdown from "react-markdown";
 function Message({ message }) {
   const isUser = message.role === "user";
 
+  const formattedTime = message.timestamp
+    ? new Date(message.timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
   return (
     <div
       className={`message-row ${
@@ -16,18 +23,27 @@ function Message({ message }) {
             : "assistant-message"
         }`}
       >
-
         <div className="message-label">
           {isUser ? "You" : "Qwen"}
         </div>
 
-        {/* <div className="message-content">
-          {message.content}
-        </div> */}
+        {message.image && (
+          <img
+            src={message.image}
+            alt="Attachment"
+            className="message-image"
+          />
+        )}
+
         <ReactMarkdown>
-            {message.content}
+          {message.content}
         </ReactMarkdown>
 
+        {formattedTime && (
+          <div className="message-timestamp">
+            {formattedTime}
+          </div>
+        )}
       </div>
     </div>
   );

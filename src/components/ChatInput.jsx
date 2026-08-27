@@ -1,10 +1,6 @@
 import { useRef, useState } from "react";
 
-function ChatInput({
-  onSend,
-  disabled,
-  visionMode,
-}) {
+function ChatInput({ onSend, disabled, visionMode }) {
   const [value, setValue] = useState("");
   const [image, setImage] = useState(null);
 
@@ -17,8 +13,7 @@ function ChatInput({
     const textarea = textareaRef.current;
 
     textarea.style.height = "auto";
-    textarea.style.height =
-      `${Math.min(textarea.scrollHeight, 180)}px`;
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
   };
 
   const handleImageChange = (event) => {
@@ -26,7 +21,12 @@ function ChatInput({
 
     if (!file) return;
 
-    setImage(file);
+    const previewUrl = URL.createObjectURL(file);
+
+    setImage({
+      file,
+      previewUrl,
+    });
   };
 
   const handleSend = () => {
@@ -36,7 +36,7 @@ function ChatInput({
       return;
     }
 
-    onSend(value.trim(), image);
+    onSend(value.trim(), image?.file, image?.previewUrl);
 
     setValue("");
     setImage(null);
@@ -51,10 +51,7 @@ function ChatInput({
   };
 
   const handleKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
     }
@@ -63,18 +60,16 @@ function ChatInput({
   return (
     <div className="input-container">
       <div className="input-box">
-
         {visionMode && (
           <div className="image-attachment">
             {image ? (
               <div className="selected-image">
-                <span>
-                  📎 {image.name}
-                </span>
+                <span>📎 {image.file.name}</span>
 
                 <button
                   type="button"
                   onClick={() => {
+                    URL.revokeObjectURL(image.previewUrl);
                     setImage(null);
 
                     if (fileInputRef.current) {
@@ -89,9 +84,7 @@ function ChatInput({
               <button
                 type="button"
                 className="attach-button"
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
+                onClick={() => fileInputRef.current?.click()}
               >
                 📎 Attach image
               </button>
@@ -113,9 +106,7 @@ function ChatInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={
-            visionMode
-              ? "Ask something about this image..."
-              : "Ask anything..."
+            visionMode ? "Ask something about this image..." : "Ask anything..."
           }
           rows={1}
           disabled={disabled}
@@ -128,17 +119,12 @@ function ChatInput({
 
           <button
             className="send-button"
-            disabled={
-              !value.trim() ||
-              disabled ||
-              (visionMode && !image)
-            }
+            disabled={!value.trim() || disabled || (visionMode && !image)}
             onClick={handleSend}
           >
             ↑
           </button>
         </div>
-
       </div>
     </div>
   );

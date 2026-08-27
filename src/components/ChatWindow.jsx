@@ -13,7 +13,7 @@ function ChatWindow({
 
   const messages = session?.messages || [];
 
-  const handleSend = async (text, image) => {
+  const handleSend = async (text, image, imagePreview) => {
     let sessionId = session?.id;
 
     if (!sessionId) {
@@ -25,10 +25,7 @@ function ChatWindow({
         messages: [],
       };
 
-      setSessions((previous) => [
-        newSession,
-        ...previous,
-      ]);
+      setSessions((previous) => [newSession, ...previous]);
 
       setActiveSessionId(sessionId);
     }
@@ -36,6 +33,8 @@ function ChatWindow({
     const userMessage = {
       role: "user",
       content: text,
+      timestamp: new Date().toISOString(),
+      image: imagePreview || null,
     };
 
     setSessions((previous) =>
@@ -43,13 +42,10 @@ function ChatWindow({
         item.id === sessionId
           ? {
               ...item,
-              messages: [
-                ...item.messages,
-                userMessage,
-              ],
+              messages: [...item.messages, userMessage],
             }
-          : item
-      )
+          : item,
+      ),
     );
 
     setLoading(true);
@@ -66,33 +62,25 @@ function ChatWindow({
           formData.append("image", image);
         }
 
-        response = await fetch(
-          "http://localhost:8000/generate-image",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+        response = await fetch("http://localhost:8000/generate-image", {
+          method: "POST",
+          body: formData,
+        });
       } else {
-        response = await fetch(
-          "http://localhost:8000/generate",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              prompt: text,
-              model: selectedModel,
-            }),
-          }
-        );
+        response = await fetch("http://localhost:8000/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: text,
+            model: selectedModel,
+          }),
+        });
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP error: ${response.status}`
-        );
+        throw new Error(`HTTP error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -100,6 +88,7 @@ function ChatWindow({
       const assistantMessage = {
         role: "assistant",
         content: data.response,
+        timestamp: new Date().toISOString(),
       };
 
       setSessions((previous) =>
@@ -107,21 +96,17 @@ function ChatWindow({
           item.id === sessionId
             ? {
                 ...item,
-                messages: [
-                  ...item.messages,
-                  assistantMessage,
-                ],
+                messages: [...item.messages, assistantMessage],
               }
-            : item
-        )
+            : item,
+        ),
       );
     } catch (error) {
       console.error(error);
 
       const errorMessage = {
         role: "assistant",
-        content:
-          "Sorry, something went wrong while processing your request.",
+        content: "Sorry, something went wrong while processing your request.",
       };
 
       setSessions((previous) =>
@@ -129,13 +114,10 @@ function ChatWindow({
           item.id === sessionId
             ? {
                 ...item,
-                messages: [
-                  ...item.messages,
-                  errorMessage,
-                ],
+                messages: [...item.messages, errorMessage],
               }
-            : item
-        )
+            : item,
+        ),
       );
     } finally {
       setLoading(false);
@@ -143,17 +125,13 @@ function ChatWindow({
   };
 
   const modelName =
-    selectedModel === "qwen-vision"
-      ? "Qwen3-VL-2B"
-      : "Qwen3-4B";
+    selectedModel === "qwen-vision" ? "Qwen3-VL-2B" : "Qwen3-4B";
 
   return (
     <main className="chat-window">
       <header className="chat-header">
         <div>
-          <h2>
-            {session?.title || "Nisum"}
-          </h2>
+          <h2>{session?.title || "Nisum"}</h2>
 
           <span>{modelName}</span>
         </div>
@@ -167,25 +145,16 @@ function ChatWindow({
       <section className="messages">
         {!session && (
           <div className="welcome">
-            <div className="welcome-icon">
-              ✦
-            </div>
+            <div className="welcome-icon">✦</div>
 
-            <h1>
-              How can I help you?
-            </h1>
+            <h1>How can I help you?</h1>
 
-            <p>
-              Ask anything. Keep your conversations and data within Nisum
-            </p>
+            <p>Ask anything. Keep your conversations and data within Nisum</p>
           </div>
         )}
 
         {messages.map((message, index) => (
-          <Message
-            key={index}
-            message={message}
-          />
+          <Message key={index} message={message} />
         ))}
 
         {loading && <Loader />}
