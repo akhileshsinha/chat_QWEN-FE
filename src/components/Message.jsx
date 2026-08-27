@@ -39,11 +39,19 @@ function Message({ message }) {
           {message.content}
         </ReactMarkdown>
 
-        {formattedTime && (
-          <div className="message-timestamp">
-            {formattedTime}
-          </div>
-        )}
+        <div className="message-meta">
+  {formattedTime && (
+    <span className="message-timestamp">
+      {formattedTime}
+    </span>
+  )}
+
+  {message.latency && (
+    <span className="message-latency">
+      {message.latency}s
+    </span>
+  )}
+</div>
       </div>
     </div>
   );

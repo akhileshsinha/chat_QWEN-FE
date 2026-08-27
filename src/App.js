@@ -8,8 +8,9 @@ function App() {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [selectedModel, setSelectedModel] = useState("qwen");
 
+  const [lastLatency, setLastLatency] = useState(null);
   const activeSession = sessions.find(
-    (session) => session.id === activeSessionId
+    (session) => session.id === activeSessionId,
   );
 
   const handleNewChat = () => {
@@ -18,7 +19,6 @@ function App() {
 
   return (
     <div className="app">
-
       <Sidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
@@ -26,6 +26,7 @@ function App() {
         onNewChat={handleNewChat}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        lastLatency={lastLatency}
       />
 
       <ChatWindow
@@ -33,8 +34,8 @@ function App() {
         setSessions={setSessions}
         setActiveSessionId={setActiveSessionId}
         selectedModel={selectedModel}
+        setLastLatency={setLastLatency}
       />
-
     </div>
   );
 }

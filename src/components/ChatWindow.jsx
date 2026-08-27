@@ -1,17 +1,25 @@
 import Message from "./Message";
 import Loader from "./Loader";
 import ChatInput from "./ChatInput";
-import { useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 function ChatWindow({
   session,
   setSessions,
   setActiveSessionId,
   selectedModel,
+  setLastLatency,
 }) {
   const [loading, setLoading] = useState(false);
-
+  const messagesEndRef = useRef(null);
   const messages = session?.messages || [];
+
+
+  useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages, loading]);
+
 
   const handleSend = async (text, image, imagePreview) => {
     let sessionId = session?.id;
@@ -49,6 +57,10 @@ function ChatWindow({
     );
 
     setLoading(true);
+    const startTime = performance.now();
+    const latency = (performance.now() - startTime) / 1000;
+
+    setLastLatency(latency.toFixed(2));
 
     try {
       let response;
@@ -84,11 +96,12 @@ function ChatWindow({
       }
 
       const data = await response.json();
-
+      const latency = (performance.now() - startTime) / 1000;
       const assistantMessage = {
         role: "assistant",
         content: data.response,
         timestamp: new Date().toISOString(),
+        latency: latency.toFixed(2),
       };
 
       setSessions((previous) =>
@@ -136,10 +149,10 @@ function ChatWindow({
           <span>{modelName}</span>
         </div>
 
-        <div className="status">
+        {/* <div className="status">
           <span className="status-dot" />
           Online
-        </div>
+        </div> */}
       </header>
 
       <section className="messages">
@@ -158,6 +171,7 @@ function ChatWindow({
         ))}
 
         {loading && <Loader />}
+        <div ref={messagesEndRef} />
       </section>
 
       <ChatInput

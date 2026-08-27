@@ -64,10 +64,19 @@ function ChatInput({ onSend, disabled, visionMode }) {
           <div className="image-attachment">
             {image ? (
               <div className="selected-image">
-                <span>📎 {image.file.name}</span>
+                <img
+                  src={image.previewUrl}
+                  alt="Selected attachment"
+                  className="attachment-thumbnail"
+                />
+
+                <div className="attachment-info">
+                  <span>{image.file.name}</span>
+                </div>
 
                 <button
                   type="button"
+                  className="remove-attachment"
                   onClick={() => {
                     URL.revokeObjectURL(image.previewUrl);
                     setImage(null);

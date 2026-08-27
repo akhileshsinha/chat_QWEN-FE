@@ -69,8 +69,8 @@ function Sidebar({
           </select>
 
           <span>● Local</span>
-        </div>
-      </div>
+  </div>
+</div>
     </aside>
   );
 }
