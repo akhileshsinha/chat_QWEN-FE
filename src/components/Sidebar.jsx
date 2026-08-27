@@ -10,7 +10,7 @@ function Sidebar({
 
         <div className="brand">
           <span className="brand-icon">✦</span>
-          <span>Local AI</span>
+          <span>Nisum</span>
         </div>
 
         <button
@@ -49,7 +49,7 @@ function Sidebar({
       </div>
 
       <div className="sidebar-footer">
-        <div>ChatBot</div>
+        <div>Qwen-3</div>
         <span>● Local</span>
       </div>
 

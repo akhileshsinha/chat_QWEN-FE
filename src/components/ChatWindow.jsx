@@ -115,7 +115,7 @@ function ChatWindow({
       <header className="chat-header">
         <div>
           <h2>
-            {session?.title || "Local AI"}
+            {session?.title || "Nisum"}
           </h2>
 
           <span>Qwen3-4B</span>
@@ -140,8 +140,7 @@ function ChatWindow({
             </h1>
 
             <p>
-              Ask anything. Your conversation
-              stays on your local machine.
+              Ask anything. Keep your conversations and data within Nisum
             </p>
           </div>
         )}

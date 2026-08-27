@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+
 function Message({ message }) {
   const isUser = message.role === "user";
 
@@ -19,9 +21,12 @@ function Message({ message }) {
           {isUser ? "You" : "Qwen"}
         </div>
 
-        <div className="message-content">
+        {/* <div className="message-content">
           {message.content}
-        </div>
+        </div> */}
+        <ReactMarkdown>
+            {message.content}
+        </ReactMarkdown>
 
       </div>
     </div>
