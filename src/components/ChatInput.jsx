@@ -1,8 +1,15 @@
 import { useRef, useState } from "react";
 
-function ChatInput({ onSend, disabled }) {
+function ChatInput({
+  onSend,
+  disabled,
+  visionMode,
+}) {
   const [value, setValue] = useState("");
+  const [image, setImage] = useState(null);
+
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const handleChange = (event) => {
     setValue(event.target.value);
@@ -14,12 +21,29 @@ function ChatInput({ onSend, disabled }) {
       `${Math.min(textarea.scrollHeight, 180)}px`;
   };
 
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setImage(file);
+  };
+
   const handleSend = () => {
     if (!value.trim() || disabled) return;
 
-    onSend(value.trim());
+    if (visionMode && !image) {
+      return;
+    }
+
+    onSend(value.trim(), image);
 
     setValue("");
+    setImage(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -27,7 +51,10 @@ function ChatInput({ onSend, disabled }) {
   };
 
   const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
       handleSend();
     }
@@ -37,30 +64,79 @@ function ChatInput({ onSend, disabled }) {
     <div className="input-container">
       <div className="input-box">
 
+        {visionMode && (
+          <div className="image-attachment">
+            {image ? (
+              <div className="selected-image">
+                <span>
+                  📎 {image.name}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage(null);
+
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="attach-button"
+                onClick={() =>
+                  fileInputRef.current?.click()
+                }
+              >
+                📎 Attach image
+              </button>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              hidden
+            />
+          </div>
+        )}
+
         <textarea
           ref={textareaRef}
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything..."
+          placeholder={
+            visionMode
+              ? "Ask something about this image..."
+              : "Ask anything..."
+          }
           rows={1}
           disabled={disabled}
         />
 
         <div className="input-actions">
-
           <span className="input-hint">
             Enter to send · Shift + Enter for new line
           </span>
 
           <button
             className="send-button"
-            disabled={!value.trim() || disabled}
+            disabled={
+              !value.trim() ||
+              disabled ||
+              (visionMode && !image)
+            }
             onClick={handleSend}
           >
             ↑
           </button>
-
         </div>
 
       </div>

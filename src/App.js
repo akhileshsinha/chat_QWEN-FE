@@ -6,6 +6,7 @@ import "./App.css";
 function App() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
+  const [selectedModel, setSelectedModel] = useState("qwen");
 
   const activeSession = sessions.find(
     (session) => session.id === activeSessionId
@@ -23,12 +24,15 @@ function App() {
         activeSessionId={activeSessionId}
         onSelectSession={setActiveSessionId}
         onNewChat={handleNewChat}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
       />
 
       <ChatWindow
         session={activeSession}
         setSessions={setSessions}
         setActiveSessionId={setActiveSessionId}
+        selectedModel={selectedModel}
       />
 
     </div>
