@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-function ChatInput({ onSend, disabled, visionMode }) {
+function ChatInput({ onSend, disabled, visionMode, onStop }) {
   const [value, setValue] = useState("");
   const [image, setImage] = useState(null);
 
@@ -126,13 +126,25 @@ function ChatInput({ onSend, disabled, visionMode }) {
             Enter to send · Shift + Enter for new line
           </span>
 
-          <button
-            className="send-button"
-            disabled={!value.trim() || disabled || (visionMode && !image)}
-            onClick={handleSend}
-          >
-            ↑
-          </button>
+          {disabled ? (
+            <button
+              type="button"
+              className="stop-button"
+              onClick={onStop}
+              title="Stop generation"
+            >
+              ■
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="send-button"
+              disabled={!value.trim() || (visionMode && !image)}
+              onClick={handleSend}
+            >
+              ↑
+            </button>
+          )}
         </div>
       </div>
     </div>

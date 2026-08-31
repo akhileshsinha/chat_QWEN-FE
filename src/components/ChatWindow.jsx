@@ -2,24 +2,37 @@ import Message from "./Message";
 import Loader from "./Loader";
 import ChatInput from "./ChatInput";
 import { useEffect, useRef, useState } from "react";
+
 function ChatWindow({
   session,
   setSessions,
   setActiveSessionId,
   selectedModel,
   setLastLatency,
+  modelLoading,
 }) {
   const [loading, setLoading] = useState(false);
+
   const messagesEndRef = useRef(null);
+  const abortControllerRef = useRef(null);
+
   const messages = session?.messages || [];
 
-
   useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({
-    behavior: "smooth",
-  });
-}, [messages, loading]);
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
+  const handleStop = () => {
+    if (!abortControllerRef.current) {
+      return;
+    }
+
+    abortControllerRef.current.abort();
+    abortControllerRef.current = null;
+    setLoading(false);
+  };
 
   const handleSend = async (text, image, imagePreview) => {
     let sessionId = session?.id;
@@ -57,14 +70,19 @@ function ChatWindow({
     );
 
     setLoading(true);
-    const startTime = performance.now();
-    const latency = (performance.now() - startTime) / 1000;
 
-    setLastLatency(latency.toFixed(2));
+    const startTime = performance.now();
+
+    const controller = new AbortController();
+
+    abortControllerRef.current = controller;
 
     try {
       let response;
 
+      /*
+       * Vision model
+       */
       if (selectedModel === "qwen-vision") {
         const formData = new FormData();
 
@@ -77,8 +95,26 @@ function ChatWindow({
         response = await fetch("http://localhost:8000/generate-image", {
           method: "POST",
           body: formData,
+          signal: controller.signal,
+        });
+      } else if (selectedModel === "qwen-coder") {
+        /*
+         * Coding model
+         */
+        response = await fetch("http://localhost:8000/generate-code", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: text,
+          }),
+          signal: controller.signal,
         });
       } else {
+        /*
+         * General Qwen model
+         */
         response = await fetch("http://localhost:8000/generate", {
           method: "POST",
           headers: {
@@ -86,8 +122,8 @@ function ChatWindow({
           },
           body: JSON.stringify({
             prompt: text,
-            model: selectedModel,
           }),
+          signal: controller.signal,
         });
       }
 
@@ -96,7 +132,11 @@ function ChatWindow({
       }
 
       const data = await response.json();
+
       const latency = (performance.now() - startTime) / 1000;
+
+      setLastLatency(latency.toFixed(2));
+
       const assistantMessage = {
         role: "assistant",
         content: data.response,
@@ -115,11 +155,17 @@ function ChatWindow({
         ),
       );
     } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("Generation stopped by user.");
+        return;
+      }
+
       console.error(error);
 
       const errorMessage = {
         role: "assistant",
         content: "Sorry, something went wrong while processing your request.",
+        timestamp: new Date().toISOString(),
       };
 
       setSessions((previous) =>
@@ -134,11 +180,16 @@ function ChatWindow({
       );
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
   const modelName =
-    selectedModel === "qwen-vision" ? "Qwen3-VL-2B" : "Qwen3-4B";
+    selectedModel === "qwen-vision"
+      ? "Qwen3-VL-2B"
+      : selectedModel === "qwen-coder"
+        ? "Qwen2.5-Coder-7B"
+        : "Qwen3-4B";
 
   return (
     <main className="chat-window">
@@ -148,11 +199,6 @@ function ChatWindow({
 
           <span>{modelName}</span>
         </div>
-
-        {/* <div className="status">
-          <span className="status-dot" />
-          Online
-        </div> */}
       </header>
 
       <section className="messages">
@@ -171,12 +217,14 @@ function ChatWindow({
         ))}
 
         {loading && <Loader />}
+
         <div ref={messagesEndRef} />
       </section>
 
       <ChatInput
         onSend={handleSend}
-        disabled={loading}
+        disabled={loading || modelLoading}
+        onStop={handleStop}
         visionMode={selectedModel === "qwen-vision"}
       />
     </main>

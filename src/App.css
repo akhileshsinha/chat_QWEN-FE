@@ -482,3 +482,33 @@ body {
 .remove-attachment:hover {
   opacity: 1;
 }
+.stop-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #111;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-button:hover {
+  opacity: 0.85;
+}
+
+.model-status {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.model-status.ready {
+  opacity: 0.8;
+}
+
+.model-status.loading {
+  opacity: 0.8;
+}

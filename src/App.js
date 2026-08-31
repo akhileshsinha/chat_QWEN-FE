@@ -7,6 +7,7 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [selectedModel, setSelectedModel] = useState("qwen");
+  const [modelLoading, setModelLoading] = useState(false);
 
   const [lastLatency, setLastLatency] = useState(null);
   const activeSession = sessions.find(
@@ -17,6 +18,35 @@ function App() {
     setActiveSessionId(null);
   };
 
+  const handleModelChange = async (model) => {
+    setSelectedModel(model);
+    setModelLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/models/switch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log(`Model ready: ${data.model}`);
+    } catch (error) {
+      console.error("Model switching failed:", error);
+    } finally {
+      setModelLoading(false);
+    }
+  };
+
   return (
     <div className="app">
       <Sidebar
@@ -25,7 +55,8 @@ function App() {
         onSelectSession={setActiveSessionId}
         onNewChat={handleNewChat}
         selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
+        onModelChange={handleModelChange}
+        modelLoading={modelLoading}
         lastLatency={lastLatency}
       />
 
@@ -35,6 +66,8 @@ function App() {
         setActiveSessionId={setActiveSessionId}
         selectedModel={selectedModel}
         setLastLatency={setLastLatency}
+        modelLoading={modelLoading}
+
       />
     </div>
   );

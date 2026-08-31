@@ -5,6 +5,7 @@ function Sidebar({
   onNewChat,
   selectedModel,
   onModelChange,
+  modelLoading,
 }) {
   return (
     <aside className="sidebar">
@@ -14,31 +15,22 @@ function Sidebar({
           <span>Nisum</span>
         </div>
 
-        <button
-          className="new-chat"
-          onClick={onNewChat}
-        >
+        <button className="new-chat" onClick={onNewChat}>
           + New chat
         </button>
       </div>
 
       <div className="history">
         <div className="history-section">
-          <span className="history-title">
-            Today
-          </span>
+          <span className="history-title">Today</span>
 
           {sessions.map((session) => (
             <button
               key={session.id}
               className={`history-item ${
-                activeSessionId === session.id
-                  ? "active"
-                  : ""
+                activeSessionId === session.id ? "active" : ""
               }`}
-              onClick={() =>
-                onSelectSession(session.id)
-              }
+              onClick={() => onSelectSession(session.id)}
             >
               {session.title}
             </button>
@@ -48,29 +40,28 @@ function Sidebar({
 
       <div className="sidebar-footer">
         <div className="model-selector">
-          <label htmlFor="model-select">
-            Model
-          </label>
+          <label htmlFor="model-select">Model</label>
 
           <select
             id="model-select"
             value={selectedModel}
-            onChange={(event) =>
-              onModelChange(event.target.value)
-            }
+            disabled={modelLoading}
+            onChange={(event) => onModelChange(event.target.value)}
           >
-            <option value="qwen">
-              Qwen3-4B
-            </option>
+            <option value="qwen">Qwen3-4B</option>
 
-            <option value="qwen-vision">
-              Qwen3-VL-2B
-            </option>
+            <option value="qwen-coder">Qwen2.5-Coder-7B</option>
+
+            <option value="qwen-vision">Qwen3-VL-2B</option>
           </select>
 
-          <span>● Local</span>
-  </div>
-</div>
+          {modelLoading ? (
+            <span className="model-status loading">⟳ Loading model...</span>
+          ) : (
+            <span className="model-status ready">● Local · Ready</span>
+          )}
+        </div>
+      </div>
     </aside>
   );
 }
