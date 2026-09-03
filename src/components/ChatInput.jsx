@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function ChatInput({
   onSend,
@@ -11,12 +11,16 @@ function ChatInput({
 }) {
   const [value, setValue] = useState("");
   const [image, setImage] = useState(null);
-  const [documentLoading, setDocumentLoading] =
-    useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(document || null);
+  const [documentLoading, setDocumentLoading] = useState(false);
 
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
   const documentInputRef = useRef(null);
+
+  useEffect(() => {
+    setSelectedDocument(document || null);
+  }, [document]);
 
   const handleChange = (event) => {
     setValue(event.target.value);
@@ -24,10 +28,7 @@ function ChatInput({
     const textarea = textareaRef.current;
 
     textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(
-      textarea.scrollHeight,
-      180,
-    )}px`;
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
   };
 
   const handleImageChange = (event) => {
@@ -43,9 +44,7 @@ function ChatInput({
     });
   };
 
-  const handleDocumentChange = async (
-    event,
-  ) => {
+  const handleDocumentChange = async (event) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -57,45 +56,36 @@ function ChatInput({
 
       formData.append("file", file);
 
-      const response = await fetch(
-        "http://localhost:8000/upload-document",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const response = await fetch("http://localhost:8000/upload-document", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP error: ${response.status}`,
-        );
+        throw new Error(`HTTP error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log("Document upload response:", data);
 
       if (data.status !== "processed") {
-        throw new Error(
-          data.error ||
-            "Document processing failed",
-        );
+        throw new Error(data.error || "Document processing failed");
       }
 
-      onDocumentUploaded({
+      const uploadedDocument = {
         documentId: data.document_id,
         filename: data.filename,
         fileType: data.file_type,
         chunks: data.chunks,
-      });
-    } catch (error) {
-      console.error(
-        "Document upload failed:",
-        error,
-      );
+      };
 
-      alert(
-        error.message ||
-          "Failed to upload document.",
-      );
+      setSelectedDocument(uploadedDocument);
+
+      onDocumentUploaded(uploadedDocument);
+    } catch (error) {
+      console.error("Document upload failed:", error);
+
+      alert(error.message || "Failed to upload document.");
     } finally {
       setDocumentLoading(false);
 
@@ -106,11 +96,7 @@ function ChatInput({
   };
 
   const handleSend = () => {
-    if (
-      !value.trim() ||
-      disabled ||
-      documentLoading
-    ) {
+    if (!value.trim() || disabled || documentLoading) {
       return;
     }
 
@@ -122,23 +108,19 @@ function ChatInput({
       value.trim(),
       image?.file,
       image?.previewUrl,
-      document?.documentId,
+      selectedDocument?.documentId,
     );
 
     setValue("");
     setImage(null);
 
     if (textareaRef.current) {
-      textareaRef.current.style.height =
-        "auto";
+      textareaRef.current.style.height = "auto";
     }
   };
 
   const handleKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
     }
@@ -147,7 +129,6 @@ function ChatInput({
   return (
     <div className="input-container">
       <div className="input-box">
-
         {visionMode && (
           <div className="image-attachment">
             {image ? (
@@ -159,26 +140,19 @@ function ChatInput({
                 />
 
                 <div className="attachment-info">
-                  <span>
-                    {image.file.name}
-                  </span>
+                  <span>{image.file.name}</span>
                 </div>
 
                 <button
                   type="button"
                   className="remove-attachment"
                   onClick={() => {
-                    URL.revokeObjectURL(
-                      image.previewUrl,
-                    );
+                    URL.revokeObjectURL(image.previewUrl);
 
                     setImage(null);
 
-                    if (
-                      imageInputRef.current
-                    ) {
-                      imageInputRef.current.value =
-                        "";
+                    if (imageInputRef.current) {
+                      imageInputRef.current.value = "";
                     }
                   }}
                 >
@@ -189,9 +163,7 @@ function ChatInput({
               <button
                 type="button"
                 className="attach-button"
-                onClick={() =>
-                  imageInputRef.current?.click()
-                }
+                onClick={() => imageInputRef.current?.click()}
               >
                 📎 Attach image
               </button>
@@ -209,28 +181,29 @@ function ChatInput({
 
         {!visionMode && (
           <div className="document-attachment">
-            {document ? (
-              <div className="selected-document">
-                <span className="document-icon">
-                  📄
-                </span>
+            {documentLoading ? (
+              <div className="selected-document document-uploading">
+                <div className="document-spinner" />
 
                 <div className="attachment-info">
-                  <span>
-                    {document.filename}
-                  </span>
+                  <strong>Uploading document...</strong>
+                  <small>Please wait</small>
+                </div>
+              </div>
+            ) : selectedDocument ? (
+              <div className="selected-document">
+                <span className="document-icon">📄</span>
 
-                  <small>
-                    Document ready
-                  </small>
+                <div className="attachment-info">
+                  <span>{selectedDocument.filename}</span>
+
+                  <small>Document ready</small>
                 </div>
 
                 <button
                   type="button"
                   className="remove-attachment"
-                  onClick={
-                    onDocumentRemoved
-                  }
+                  onClick={onDocumentRemoved}
                 >
                   ×
                 </button>
@@ -239,14 +212,10 @@ function ChatInput({
               <button
                 type="button"
                 className="attach-button"
-                disabled={documentLoading}
-                onClick={() =>
-                  documentInputRef.current?.click()
-                }
+                disabled={disabled}
+                onClick={() => documentInputRef.current?.click()}
               >
-                {documentLoading
-                  ? "⟳ Processing document..."
-                  : "📎 Attach document"}
+                📎 Attach document
               </button>
             )}
 
@@ -254,9 +223,8 @@ function ChatInput({
               ref={documentInputRef}
               type="file"
               accept=".pdf,.docx,.xlsx,.pptx"
-              onChange={
-                handleDocumentChange
-              }
+              onChange={handleDocumentChange}
+              disabled={documentLoading}
               hidden
             />
           </div>
@@ -270,20 +238,17 @@ function ChatInput({
           placeholder={
             visionMode
               ? "Ask something about this image..."
-              : document
+              : selectedDocument
                 ? "Ask something about this document..."
                 : "Ask anything..."
           }
           rows={1}
-          disabled={
-            disabled || documentLoading
-          }
+          disabled={disabled || documentLoading}
         />
 
         <div className="input-actions">
           <span className="input-hint">
-            Enter to send · Shift + Enter for
-            new line
+            Enter to send · Shift + Enter for new line
           </span>
 
           {disabled ? (
@@ -300,9 +265,7 @@ function ChatInput({
               type="button"
               className="send-button"
               disabled={
-                !value.trim() ||
-                documentLoading ||
-                (visionMode && !image)
+                !value.trim() || documentLoading || (visionMode && !image)
               }
               onClick={handleSend}
             >

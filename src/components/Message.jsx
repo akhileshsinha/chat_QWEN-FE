@@ -61,6 +61,47 @@ function Message({ message }) {
           {message.content}
         </ReactMarkdown>
 
+        {message.sources?.length > 0 && (
+          <div className="message-sources">
+            <div className="sources-title">
+              📎 Sources
+            </div>
+
+            <div className="sources-list">
+              {message.sources.map(
+                (source, index) => (
+                  <div
+                    key={index}
+                    className="source-card"
+                  >
+                    <div className="source-icon">
+                      {source.type === "slide"
+                        ? "📑"
+                        : source.type === "sheet"
+                          ? "📊"
+                          : "📄"}
+                    </div>
+
+                    <div className="source-info">
+                      <strong>
+                        {source.source}
+                      </strong>
+
+                      <span>
+                        Relevance:{" "}
+                        {(
+                          source.score * 100
+                        ).toFixed(0)}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="message-meta">
           {formattedTime && (
             <span className="message-timestamp">
