@@ -512,3 +512,81 @@ body {
 .model-status.loading {
   opacity: 0.8;
 }
+.document-attachment {
+  margin-bottom: 10px;
+}
+
+.selected-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  max-width: 320px;
+}
+
+.document-icon {
+  font-size: 24px;
+}
+
+.document-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.document-details strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-details span {
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.message-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 260px;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.document-thumbnail {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.document-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.document-details strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-details span {
+  font-size: 11px;
+  opacity: 0.65;
+  margin-top: 3px;
+}

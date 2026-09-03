@@ -4,7 +4,9 @@ function Message({ message }) {
   const isUser = message.role === "user";
 
   const formattedTime = message.timestamp
-    ? new Date(message.timestamp).toLocaleTimeString([], {
+    ? new Date(
+        message.timestamp,
+      ).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })
@@ -13,7 +15,9 @@ function Message({ message }) {
   return (
     <div
       className={`message-row ${
-        isUser ? "user-row" : "assistant-row"
+        isUser
+          ? "user-row"
+          : "assistant-row"
       }`}
     >
       <div
@@ -35,23 +39,41 @@ function Message({ message }) {
           />
         )}
 
+        {message.document && (
+          <div className="message-document">
+            <div className="document-thumbnail">
+              <span>📄</span>
+            </div>
+
+            <div className="document-details">
+              <strong>
+                {message.document.filename}
+              </strong>
+
+              <span>
+                {message.document.fileType}
+              </span>
+            </div>
+          </div>
+        )}
+
         <ReactMarkdown>
           {message.content}
         </ReactMarkdown>
 
         <div className="message-meta">
-  {formattedTime && (
-    <span className="message-timestamp">
-      {formattedTime}
-    </span>
-  )}
+          {formattedTime && (
+            <span className="message-timestamp">
+              {formattedTime}
+            </span>
+          )}
 
-  {message.latency && (
-    <span className="message-latency">
-      {message.latency}s
-    </span>
-  )}
-</div>
+          {message.latency && (
+            <span className="message-latency">
+              {message.latency}s
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

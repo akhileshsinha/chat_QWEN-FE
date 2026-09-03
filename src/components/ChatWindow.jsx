@@ -17,6 +17,7 @@ function ChatWindow({
   const abortControllerRef = useRef(null);
 
   const messages = session?.messages || [];
+  const document = session?.document || null;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -34,7 +35,46 @@ function ChatWindow({
     setLoading(false);
   };
 
-  const handleSend = async (text, image, imagePreview) => {
+  const handleDocumentUploaded = (uploadedDocument) => {
+    if (!session?.id) {
+      return;
+    }
+
+    setSessions((previous) =>
+      previous.map((item) =>
+        item.id === session.id
+          ? {
+              ...item,
+              document: uploadedDocument,
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleDocumentRemoved = () => {
+    if (!session?.id) {
+      return;
+    }
+
+    setSessions((previous) =>
+      previous.map((item) =>
+        item.id === session.id
+          ? {
+              ...item,
+              document: null,
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleSend = async (
+    text,
+    image,
+    imagePreview,
+    documentId,
+  ) => {
     let sessionId = session?.id;
 
     if (!sessionId) {
@@ -44,18 +84,28 @@ function ChatWindow({
         id: sessionId,
         title: text,
         messages: [],
+        document: document || null,
       };
 
-      setSessions((previous) => [newSession, ...previous]);
+      setSessions((previous) => [
+        newSession,
+        ...previous,
+      ]);
 
       setActiveSessionId(sessionId);
     }
+
+    const activeDocumentId =
+      documentId || document?.documentId;
 
     const userMessage = {
       role: "user",
       content: text,
       timestamp: new Date().toISOString(),
       image: imagePreview || null,
+      document: activeDocumentId
+        ? document
+        : null,
     };
 
     setSessions((previous) =>
@@ -63,7 +113,10 @@ function ChatWindow({
         item.id === sessionId
           ? {
               ...item,
-              messages: [...item.messages, userMessage],
+              messages: [
+                ...item.messages,
+                userMessage,
+              ],
             }
           : item,
       ),
@@ -92,54 +145,85 @@ function ChatWindow({
           formData.append("image", image);
         }
 
-        response = await fetch("http://localhost:8000/generate-image", {
-          method: "POST",
-          body: formData,
-          signal: controller.signal,
-        });
+        response = await fetch(
+          "http://localhost:8000/generate-image",
+          {
+            method: "POST",
+            body: formData,
+            signal: controller.signal,
+          },
+        );
+      } else if (activeDocumentId) {
+        /*
+         * Document RAG
+         */
+        response = await fetch(
+          "http://localhost:8000/ask-document",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              document_id: activeDocumentId,
+              question: text,
+            }),
+            signal: controller.signal,
+          },
+        );
       } else if (selectedModel === "qwen-coder") {
         /*
          * Coding model
          */
-        response = await fetch("http://localhost:8000/generate-code", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        response = await fetch(
+          "http://localhost:8000/generate-code",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              prompt: text,
+            }),
+            signal: controller.signal,
           },
-          body: JSON.stringify({
-            prompt: text,
-          }),
-          signal: controller.signal,
-        });
+        );
       } else {
         /*
          * General Qwen model
          */
-        response = await fetch("http://localhost:8000/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        response = await fetch(
+          "http://localhost:8000/generate",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              prompt: text,
+            }),
+            signal: controller.signal,
           },
-          body: JSON.stringify({
-            prompt: text,
-          }),
-          signal: controller.signal,
-        });
+        );
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        throw new Error(
+          `HTTP error: ${response.status}`,
+        );
       }
 
       const data = await response.json();
 
-      const latency = (performance.now() - startTime) / 1000;
+      const latency =
+        (performance.now() - startTime) / 1000;
 
       setLastLatency(latency.toFixed(2));
 
       const assistantMessage = {
         role: "assistant",
-        content: data.response,
+        content:
+          data.answer || data.response,
         timestamp: new Date().toISOString(),
         latency: latency.toFixed(2),
       };
@@ -149,14 +233,19 @@ function ChatWindow({
           item.id === sessionId
             ? {
                 ...item,
-                messages: [...item.messages, assistantMessage],
+                messages: [
+                  ...item.messages,
+                  assistantMessage,
+                ],
               }
             : item,
         ),
       );
     } catch (error) {
       if (error.name === "AbortError") {
-        console.log("Generation stopped by user.");
+        console.log(
+          "Generation stopped by user.",
+        );
         return;
       }
 
@@ -164,7 +253,8 @@ function ChatWindow({
 
       const errorMessage = {
         role: "assistant",
-        content: "Sorry, something went wrong while processing your request.",
+        content:
+          "Sorry, something went wrong while processing your request.",
         timestamp: new Date().toISOString(),
       };
 
@@ -173,7 +263,10 @@ function ChatWindow({
           item.id === sessionId
             ? {
                 ...item,
-                messages: [...item.messages, errorMessage],
+                messages: [
+                  ...item.messages,
+                  errorMessage,
+                ],
               }
             : item,
         ),
@@ -195,7 +288,9 @@ function ChatWindow({
     <main className="chat-window">
       <header className="chat-header">
         <div>
-          <h2>{session?.title || "Nisum"}</h2>
+          <h2>
+            {session?.title || "Nisum"}
+          </h2>
 
           <span>{modelName}</span>
         </div>
@@ -204,16 +299,26 @@ function ChatWindow({
       <section className="messages">
         {!session && (
           <div className="welcome">
-            <div className="welcome-icon">✦</div>
+            <div className="welcome-icon">
+              ✦
+            </div>
 
-            <h1>How can I help you?</h1>
+            <h1>
+              How can I help you?
+            </h1>
 
-            <p>Ask anything. Keep your conversations and data within Nisum</p>
+            <p>
+              Ask anything. Keep your
+              conversations and data within Nisum
+            </p>
           </div>
         )}
 
         {messages.map((message, index) => (
-          <Message key={index} message={message} />
+          <Message
+            key={index}
+            message={message}
+          />
         ))}
 
         {loading && <Loader />}
@@ -225,7 +330,16 @@ function ChatWindow({
         onSend={handleSend}
         disabled={loading || modelLoading}
         onStop={handleStop}
-        visionMode={selectedModel === "qwen-vision"}
+        visionMode={
+          selectedModel === "qwen-vision"
+        }
+        document={document}
+        onDocumentUploaded={
+          handleDocumentUploaded
+        }
+        onDocumentRemoved={
+          handleDocumentRemoved
+        }
       />
     </main>
   );
